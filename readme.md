@@ -1,10 +1,10 @@
 # electron-rabbit
 
-Simple inter process communication to speed up your electron apps. 
+Simple inter process communication to speed up your electron apps.
 
-## Why? 
+## Why?
 
-Read [this post by @jlongster](https://jlongster.com/secret-of-good-electron-apps) to learn why you would use this. 
+Read [this post by @jlongster](https://jlongster.com/secret-of-good-electron-apps) to learn why you would use this.
 
 ## Setup
 
@@ -31,7 +31,7 @@ ipcRenderer.on('set-socket', (event, { name }) => {
 })
 ```
 
-## Usage 
+## Usage
 
 ### Client -> Background -> Client
 
@@ -103,7 +103,7 @@ Messages are kept in a queue which is drained once a connection is established.
 
 ### ```electron-rabbit.init(socketName, handlers)```
 
-Create the background ipc handlers. 
+Create the background ipc handlers. Returns a promise that will resolve when the IPC server is listening
 
 Arguments:
 

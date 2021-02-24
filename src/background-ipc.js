@@ -1,11 +1,24 @@
 const ipc = require('node-ipc')
 
+/**
+ * Create an IPC server, listening on the specified socketName. Returns a
+ * promise that will resolve when the IPC server is listening
+ *
+ * @param {string} socketName Unique name for the socket. Any existing socket with this name will be deleted.
+ * @param {{ [handlerName]: (...args: any[]) => Promise<any> }} handlers Object of String -> Handler. Handler should be an asyncronous function that returns a Promise.
+ * @returns Promise
+ */
 function init (socketName, handlers) {
-  ipc.config.id = socketName
-  ipc.config.logger = console.log
+  return new Promise(resolve => {
+    ipc.config.id = socketName
+    ipc.config.logger = console.log
 
-  ipc.serve(() => {
-    ipc.server.on('message', (data, socket) => {
+    ipc.serve()
+    ipc.server.on('message', handleMessage)
+    ipc.server.on('start', resolve)
+    ipc.server.start()
+
+    function handleMessage (data, socket) {
       const msg = JSON.parse(data)
       const { id, name, args } = msg
 
@@ -44,10 +57,8 @@ function init (socketName, handlers) {
           JSON.stringify({ type: 'reply', id, result: null })
         )
       }
-    })
+    }
   })
-
-  ipc.server.start()
 }
 
 module.exports = init
