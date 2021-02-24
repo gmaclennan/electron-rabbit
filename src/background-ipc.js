@@ -5,8 +5,8 @@ const ipc = require('node-ipc')
  * promise that will resolve when the IPC server is listening
  *
  * @param {string} socketName Unique name for the socket. Any existing socket with this name will be deleted.
- * @param {{ [handlerName]: (...args: any[]) => Promise<any> }} handlers Object of String -> Handler. Handler should be an asyncronous function that returns a Promise.
- * @returns Promise
+ * @param {{ [handlerName: string]: (...args: any[]) => Promise<any> }} handlers Object of String -> Handler. Handler should be an asyncronous function that returns a Promise.
+ * @returns {Promise<void>}
  */
 function init (socketName, handlers) {
   return new Promise(resolve => {
