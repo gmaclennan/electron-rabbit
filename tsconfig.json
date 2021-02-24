@@ -11,5 +11,6 @@
     "checkJs": true,
     "noEmit": true,
     "typeRoots": ["types", "node_modules/@types"]
-  }
+  },
+  "exclude": ["example", "node_modules"]
 }

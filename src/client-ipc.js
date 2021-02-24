@@ -1,14 +1,28 @@
 const uuid = require('uuid')
 const ipc = require('node-ipc')
+const once = require('once')
+
+/** @typedef {(...args: unknown[]) => any} Callback */
 
 class IPC {
   constructor () {
+    /** @type {Map<string, { cb: Callback}>} */
     this.replyHandlers = new Map()
+    /** @type {Map<string, Callback[]>} */
     this.listeners = new Map()
+    /** @type {string[]} */
     this.messageQueue = []
     this.socketClient = null
   }
 
+  /**
+   * Call a handler `name` on the server
+   *
+   * @param {string} name Name of socket to send the message
+   * @param {any} args Arguments to pass to the handler
+   * @param {Callback} cb Callback with reply
+   * @memberof IPC
+   */
   send (name, args, cb) {
     if (!cb && typeof args === 'function') {
       cb = args
@@ -23,31 +37,54 @@ class IPC {
     }
   }
 
+  /**
+   * Listen for IPC event
+   *
+   * @param {string} name Name of event
+   * @param {Callback} cb Callback with reply
+   * @memberof IPC
+   */
   on (name, cb) {
-    if (!this.listeners.get(name)) {
-      this.listeners.set(name, [])
+    const listeners = this.listeners.get(name) || []
+    if (!listeners.length) {
+      this.listeners.set(name, listeners)
     }
-    this.listeners.get(name).push(cb)
+    listeners.push(cb)
 
     return () => {
-      const arr = this.listeners.get(name)
+      const arr = this.listeners.get(name) || []
       this.listeners.set(name, arr.filter(cb_ => cb_ !== cb))
     }
   }
 
+  /**
+   * Remote an event listener
+   *
+   * @param {string} name
+   * @memberof IPC
+   */
   removeListener (name) {
     this.listeners.set(name, [])
   }
 
-  connect (name, cb) {
-    if (!cb) cb = function noop () {}
-    this._connect(name, (client) => {
-      client.on('message', data => {
-        var msg
+  /**
+   * Connect to a socket name `socketName`. Any messages sent before connection
+   * are queued and sent upon connection
+   *
+   * @param {string} socketName
+   * @param {(err?: Error) => any} [cb] Called when socket connects
+   * @memberof IPC
+   */
+  connect (socketName, cb = function noop () {}) {
+    cb = once(cb)
+    this._connect(socketName, (client) => {
+      client.on('message', (/** @type {string} */ data) => {
+        let msg
         try {
           msg = JSON.parse(data)
         } catch (err) {
-          console.error(err, data)
+          // cannot got further is cannot parse message
+          return console.error(err, data)
         }
 
         if (msg.type === 'error') {
@@ -75,8 +112,14 @@ class IPC {
             })
           }
         } else {
-          throw new Error('Unknown message type: ' + JSON.stringify(msg))
+          return console.error('Unknown message type: ' + JSON.stringify(msg))
         }
+      })
+
+      client.on('error', (/** @type {any} */ err) => {
+        ipc.disconnect(socketName)
+        console.error('Error connecting to socket', err)
+        cb(err)
       })
 
       client.on('connect', () => {
@@ -95,9 +138,16 @@ class IPC {
     })
   }
 
-  _connect (id, func) {
-    ipc.connectTo(id, () => {
-      func(ipc.of[id])
+  /**
+   * @private
+   *
+   * @param {string} socketName
+   * @param {(client: any) => any} func
+   * @memberof IPC
+   */
+  _connect (socketName, func) {
+    ipc.connectTo(socketName, () => {
+      func(ipc.of[socketName])
     })
   }
 }

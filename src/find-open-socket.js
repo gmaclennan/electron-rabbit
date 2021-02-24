@@ -3,22 +3,34 @@ const ipc = require('node-ipc')
 
 ipc.config.silent = true
 
-function isSocketTaken (name, fn) {
+/**
+ * Check if a socket is already in use
+ *
+ * @param {string} socketName
+ * @returns {Promise<boolean>}
+ */
+function isSocketTaken (socketName) {
   return new Promise((resolve, reject) => {
-    ipc.connectTo(name, () => {
-      ipc.of[name].on('error', () => {
-        ipc.disconnect(name)
+    ipc.connectTo(socketName, () => {
+      ipc.of[socketName].on('error', () => {
+        ipc.disconnect(socketName)
         resolve(false)
       })
 
-      ipc.of[name].on('connect', () => {
-        ipc.disconnect(name)
+      ipc.of[socketName].on('connect', () => {
+        ipc.disconnect(socketName)
         resolve(true)
       })
     })
   })
 }
 
+/**
+ * Find an open socket within a namespace
+ *
+ * @param {string} namespace
+ * @returns {Promise<string>} available socket name
+ */
 async function findOpenSocket (namespace) {
   let currentSocket = 1
   while (await isSocketTaken(namespace + currentSocket)) {

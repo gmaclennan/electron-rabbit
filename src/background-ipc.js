@@ -7,9 +7,10 @@ const pIsPromise = require('p-is-promise')
  *
  * @param {string} socketName Unique name for the socket. Any existing socket with this name will be deleted.
  * @param {{ [handlerName: string]: (...args: any[]) => Promise<unknown> }} handlers Object of String -> Handler. Handler should be an asyncronous function that returns a Promise.
+ * @param {{ logger?: (msg: string) => void }} [options] Options: logger for IPC to use e.g. console.log
  * @returns {Promise<void>}
  */
-function init (socketName, handlers) {
+function init (socketName, handlers, { logger } = {}) {
   return new Promise(resolve => {
     ipc.config.id = socketName
     ipc.config.logger = console.log
