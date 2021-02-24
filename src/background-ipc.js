@@ -13,7 +13,9 @@ const pIsPromise = require('p-is-promise')
 function init (socketName, handlers, { logger } = {}) {
   return new Promise(resolve => {
     ipc.config.id = socketName
-    ipc.config.logger = console.log
+    if (typeof logger === 'function') {
+      ipc.config.logger = logger
+    }
 
     ipc.serve()
     ipc.server.on('message', handleMessage)
@@ -34,7 +36,7 @@ function init (socketName, handlers, { logger } = {}) {
       const { id, name, args } = msg
 
       if (typeof id !== 'string') {
-        console.error('IPC message is missing an id')
+        ipc.log('IPC message is missing an id')
         // Can't send a reply without an id, so need to fail silently
         // TODO: Generic error handler channel?
         return
@@ -46,7 +48,7 @@ function init (socketName, handlers, { logger } = {}) {
       const handler = handlers[name]
 
       if (typeof handler !== 'function') {
-        console.warn('Unknown method: ' + msg.name)
+        ipc.log('Unknown method: ' + msg.name)
         ipc.server.emit(
           socket,
           'message',
@@ -75,8 +77,8 @@ function init (socketName, handlers, { logger } = {}) {
 
       /** @param {Error} error */
       function onError (error) {
-        console.warn('Error', name, args)
-        console.error(error)
+        ipc.log('Error', name, args)
+        ipc.log(error)
         // Up to you how to handle errors, if you want to forward
         // them, etc
         ipc.server.emit(

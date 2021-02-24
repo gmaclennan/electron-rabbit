@@ -5,7 +5,11 @@ const once = require('once')
 /** @typedef {(...args: unknown[]) => any} Callback */
 
 class IPC {
-  constructor () {
+  /** @param {{ logger?: () => any }} [opts] */
+  constructor ({ logger } = {}) {
+    if (typeof logger === 'function') {
+      ipc.config.logger = logger
+    }
     /** @type {Map<string, { cb: Callback}>} */
     this.replyHandlers = new Map()
     /** @type {Map<string, Callback[]>} */
@@ -84,7 +88,7 @@ class IPC {
           msg = JSON.parse(data)
         } catch (err) {
           // cannot got further is cannot parse message
-          return console.error(err, data)
+          return ipc.log(err, data)
         }
 
         if (msg.type === 'error') {
@@ -112,13 +116,13 @@ class IPC {
             })
           }
         } else {
-          return console.error('Unknown message type: ' + JSON.stringify(msg))
+          return ipc.log('Unknown message type: ' + JSON.stringify(msg))
         }
       })
 
       client.on('error', (/** @type {any} */ err) => {
         ipc.disconnect(socketName)
-        console.error('Error connecting to socket', err)
+        ipc.log('Error connecting to socket', err)
         cb(err)
       })
 
