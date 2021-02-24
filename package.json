@@ -30,6 +30,7 @@
   "license": "MIT",
   "dependencies": {
     "node-ipc": "^9.1.1",
+    "p-is-promise": "^3.0.0",
     "uuid": "^7.0.2"
   },
   "devDependencies": {
